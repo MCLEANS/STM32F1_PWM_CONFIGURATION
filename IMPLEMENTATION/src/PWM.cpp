@@ -13,13 +13,11 @@ PWM::PWM(TIM_TypeDef *TIMER,
 		channel input_channel,
 		GPIO_TypeDef *PORT,
 		uint8_t PIN,
-		alternate_function pin_function,
 		uint16_t prescaler,
 		uint16_t auto_reload_value ):TIMER(TIMER),
 									input_channel(input_channel),
 									PORT(PORT),
 									PIN(PIN),
-									pin_function(pin_function),
 									prescaler(prescaler),
 									auto_reload_value(auto_reload_value)
 										{
@@ -28,35 +26,24 @@ PWM::PWM(TIM_TypeDef *TIMER,
 	if(TIMER == TIM2) RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 	if(TIMER == TIM3) RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 	if(TIMER == TIM4) RCC->APB1ENR |= RCC_APB1ENR_TIM4EN;
-	if(TIMER == TIM5) RCC->APB1ENR |= RCC_APB1ENR_TIM5EN;
-	if(TIMER == TIM6) RCC->APB1ENR |= RCC_APB1ENR_TIM6EN;
-	if(TIMER == TIM7) RCC->APB1ENR |= RCC_APB1ENR_TIM7EN;
-	if(TIMER == TIM8) RCC->APB2ENR |= RCC_APB2ENR_TIM8EN;
-	if(TIMER == TIM9) RCC->APB2ENR |= RCC_APB2ENR_TIM9EN;
-	if(TIMER == TIM10) RCC->APB2ENR |= RCC_APB2ENR_TIM10EN;
-	if(TIMER == TIM11) RCC->APB2ENR |= RCC_APB2ENR_TIM11EN;
-	if(TIMER == TIM12) RCC->APB1ENR |= RCC_APB1ENR_TIM12EN;
-	if(TIMER == TIM13) RCC->APB1ENR |= RCC_APB1ENR_TIM13EN;
-	if(TIMER == TIM14) RCC->APB1ENR |= RCC_APB1ENR_TIM14EN;
-
-
 
 	//Enable GPIO RCC
-	if(PORT == GPIOA) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
-	if(PORT == GPIOB) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-	if(PORT == GPIOC) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
-	if(PORT == GPIOD) RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
-	if(PORT == GPIOE) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOEEN;
-	if(PORT == GPIOF) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOFEN;
-	if(PORT == GPIOG) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOGEN;
-	if(PORT == GPIOH) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOHEN;
-	if(PORT == GPIOI) RCC->AHB1ENR |= RCC_AHB1ENR_GPIOIEN;
+	if(PORT == GPIOA) RCC->APB2ENR |= RCC_APB2ENR_IOPAEN;
+	if(PORT == GPIOB) RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;
+	if(PORT == GPIOC) RCC->APB2ENR |= RCC_APB2ENR_IOPCEN;
+	if(PORT == GPIOD) RCC->APB2ENR |= RCC_APB2ENR_IOPDEN;
+	if(PORT == GPIOE) RCC->APB2ENR |= RCC_APB2ENR_IOPEEN;
+
 
 	//Set pin to alternate function mode
-	PORT->MODER &= ~(1 << (PIN*2));
-	PORT->MODER |= (1 << ((PIN*2)+1));
-
-	set_alternate_function(pin_function);
+	if(PIN < 8){
+		PORT->CRL &= ~(1 << (((PIN*4)+2)));
+		PORT->CRL |= (1 << (((PIN*4)+2)+1));
+	}
+	else{
+		PORT->CRH &= ~(1 << ((((PIN-8)*4)+2)));
+		PORT->CRH |= (1 << ((((PIN-8)*4)+2)+1));
+	}
 
 	TIMER->PSC = this->prescaler;
 	TIMER->ARR = this-> auto_reload_value;
@@ -110,134 +97,7 @@ uint16_t PWM::get_duty_cycle(void) const{
 	return this->duty_cycle;
 }
 
-//Check from the micro-controller datasheet to find out the specific alternate function
-void PWM::set_alternate_function(alternate_function pin_alternate_function){
-	if(pin_alternate_function == AF0) {
-		if(PIN < 8){
-			PORT->AFR[0] &= ~(1<<(PIN*4));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-		else{
-			PORT->AFR[1] &= ~(1<<((PIN-8)*4));
-			PORT->AFR[1] &= ~(1<<(((PIN-8)*4)+1));
-			PORT->AFR[1] &= ~(1<<(((PIN-8)*4)+2));
-			PORT->AFR[1] &= ~(1<<(((PIN-8)*4)+3));
-		}
-	}
 
-	if(pin_alternate_function == AF1){
-		if(PIN < 8){
-			PORT->AFR[0] |= (1<<(PIN*4));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-		else{
-			PORT->AFR[1] |= (1<<((PIN-8)*4));
-			PORT->AFR[1] &= ~(1<<(((PIN-8)*4)+1));
-			PORT->AFR[1] &= ~(1<<(((PIN-8)*4)+2));
-			PORT->AFR[1] &= ~(1<<(((PIN-8)*4)+3));
-
-		}
-	}
-	if(pin_alternate_function == AF2){
-
-		if(PIN < 8){
-			PORT->AFR[0] &= ~(1<<(PIN*4));
-			PORT->AFR[0] |= (1<<((PIN*4)+1));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-		else{
-			PORT->AFR[1] &= ~(1<<(PIN*4));
-			PORT->AFR[0] |= (1<<((PIN*4)+1));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-
-	}
-	if(pin_alternate_function == AF3) {
-			PORT->AFR[0] |= (1<<(PIN*4));
-			PORT->AFR[0] |= (1<<((PIN*4)+1));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-	if(pin_alternate_function == AF4) {
-			PORT->AFR[0] &= ~(1<<(PIN*4));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[0] |= (1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-	if(pin_alternate_function == AF5) {
-			PORT->AFR[0] |= (1<<(PIN*4));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[0] |= (1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-	if(pin_alternate_function == AF6) {
-			PORT->AFR[0] &= ~(1<<(PIN*4));
-			PORT->AFR[0] |= (1<<((PIN*4)+1));
-			PORT->AFR[0] |= (1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-	if(pin_alternate_function == AF7) {
-			PORT->AFR[0] |= (1<<(PIN*4));
-			PORT->AFR[0] |= (1<<((PIN*4)+1));
-			PORT->AFR[0] |= (1<<((PIN*4)+2));
-			PORT->AFR[0] &= ~(1<<((PIN*4)+3));
-		}
-	if(pin_alternate_function == AF8) {
-			PORT->AFR[1] &= ~(1<<(PIN*4));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-		}
-	if(pin_alternate_function == AF9) {
-			PORT->AFR[1] |= (1<<(PIN*4));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-	if(pin_alternate_function == AF10) {
-			PORT->AFR[1] &= ~(1<<(PIN*4));
-			PORT->AFR[1] |= (1<<((PIN*4)+1));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-	if(pin_alternate_function == AF11) {
-			PORT->AFR[1] |= (1<<(PIN*4));
-			PORT->AFR[1] |= (1<<((PIN*4)+1));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-	if(pin_alternate_function == AF12) {
-			PORT->AFR[1] &= ~(1<<(PIN*4));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[1] |= (1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-	if(pin_alternate_function == AF13) {
-			PORT->AFR[1] |= (1<<(PIN*4));
-			PORT->AFR[1] &= ~(1<<((PIN*4)+1));
-			PORT->AFR[1] |= (1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-	if(pin_alternate_function == AF14) {
-			PORT->AFR[1] &= ~(1<<(PIN*4));
-			PORT->AFR[1] |= (1<<((PIN*4)+1));
-			PORT->AFR[1] |= (1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-	if(pin_alternate_function == AF15) {
-			PORT->AFR[1] |= (1<<(PIN*4));
-			PORT->AFR[1] |= (1<<((PIN*4)+1));
-			PORT->AFR[1] |= (1<<((PIN*4)+2));
-			PORT->AFR[1] |= (1<<((PIN*4)+3));
-			}
-
-}
 
 void PWM::begin(){
 	//set to PWM Mode 1
