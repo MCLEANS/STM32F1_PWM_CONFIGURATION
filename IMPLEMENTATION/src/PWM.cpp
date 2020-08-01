@@ -37,13 +37,14 @@ PWM::PWM(TIM_TypeDef *TIMER,
 
 	//Set pin to alternate function mode
 	if(PIN < 8){
-		PORT->CRL &= ~(1 << (((PIN*4)+2)));
-		PORT->CRL |= (1 << (((PIN*4)+2)+1));
-	}
-	else{
-		PORT->CRH &= ~(1 << ((((PIN-8)*4)+2)));
-		PORT->CRH |= (1 << ((((PIN-8)*4)+2)+1));
-	}
+			PORT->CRL |= (1<<(PIN*4))|(1<<((PIN*4)+1))|(1<<((PIN*4)+3));
+			PORT->CRL &= ~(1<<((PIN*4)+2));
+		}
+		else{
+			PIN = PIN-8;
+			PORT->CRH |= (1<<(PIN*4))|(1<<((PIN*4)+1))|(1<<((PIN*4)+3));
+			PORT->CRH &= ~(1<<((PIN*4)+2));
+		}
 
 	TIMER->PSC = this->prescaler;
 	TIMER->ARR = this-> auto_reload_value;
